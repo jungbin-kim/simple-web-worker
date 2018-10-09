@@ -1,8 +1,25 @@
 // TODO input delay 값 받아서 동적으로 실행해보기
-let Delay1InputElement = document.querySelector('#number1');
-let Delay2InputElement = document.querySelector('#number2');
+let delay1InputElement = document.querySelector('#number1');
+let delay2InputElement = document.querySelector('#number2');
 
 let result = document.querySelector('.result');
+
+// 비동기로 worker 여러 메시지 보내는 함수
+function postMessagesAsync(worker, startIndex, endIndex, delay) {
+    const promises = [];
+    for(let i = startIndex; i < endIndex + 1; i++){
+        const myPromise = new Promise((resolve, reject) => {
+            let result = {index: i};
+            setTimeout(function() {
+                console.log('Post message: ' + i);
+                worker.postMessage(result);
+                resolve(result);
+            }, delay);
+        });
+        promises.push(myPromise);
+    }
+    return promises;
+}
 
 // Check if Browser supports the Worker api.
 if (window.Worker) {
@@ -14,39 +31,20 @@ if (window.Worker) {
 		console.log(data);
 	};
 
-	const promises = [];
+	let promises = [];
 	const Delay1= 500;
 	const Delay2= 300;
 
-	// TODO 비동기 묶음 제조 함수 만들기
-	// 첫번째 비동기
-	for(let i = 1; i < 11; i++){
-        const myPromise = new Promise((resolve, reject) => {
-        	let result = {index: i};
-            setTimeout(function() {
-                console.log('Post message: ' + i);
-                myWorker.postMessage(result);
-                resolve(result);
-            }, Delay1);
-        });
-        promises.push(myPromise);
-    }
+	// 첫번째 비동기 묶음
+    promises = promises.concat(postMessagesAsync(myWorker, 1, 10, Delay1));
 
-    // 두번째 비동기
-    for(let j = 21; j < 31; j++){
-        const myPromise = new Promise((resolve, reject) => {
-            let result = {index: j};
-            setTimeout(function() {
-                console.log('Post message: ' + j);
-                myWorker.postMessage(result);
-                resolve(result);
-            }, Delay2);
-        });
-        promises.push(myPromise);
-    }
+    // 두번째 비동기 묶음
+    promises = promises.concat(postMessagesAsync(myWorker, 20, 30, Delay2));
 
+    // 비동기 요청 묶음
+    console.log("Start Promises request", promises);
     Promise.all(promises).then((resArray) => {
-    	console.log(resArray);
+    	console.log("End Promises request", resArray);
 	});
 
 } else {
