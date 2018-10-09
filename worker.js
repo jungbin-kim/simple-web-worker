@@ -1,6 +1,8 @@
-onmessage = function(e) {
-  console.log('Message received from main script');
-  var workerResult = 'Result: ' + (e.data[0] * e.data[1]);
-  console.log('Posting message back to main script');
-  postMessage(workerResult);
-}
+let count = 0;
+onmessage = function({data}) {
+
+  // worker 내 상태 변화
+  count++;
+  // Send Response
+  postMessage('Received ' + data.index + ' Message. Count = ' + count);
+};
