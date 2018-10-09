@@ -1,8 +1,18 @@
-// TODO input delay 값 받아서 동적으로 실행해보기
+// input delay 값 받아서 동적으로 실행
 let delay1InputElement = document.querySelector('#number1');
 let delay2InputElement = document.querySelector('#number2');
 
 let result = document.querySelector('.result');
+
+function appendTextToResult(text) {
+    let textElement = document.createElement("p");
+    textElement.textContent = text;
+    result.append(textElement);
+}
+
+function clearResult(){
+    result.innerHTML = "";
+}
 
 // 비동기로 worker 여러 메시지 보내는 함수
 function postMessagesAsync(worker, startIndex, endIndex, delay) {
@@ -11,7 +21,9 @@ function postMessagesAsync(worker, startIndex, endIndex, delay) {
         const myPromise = new Promise((resolve, reject) => {
             let result = {index: i};
             setTimeout(function() {
-                console.log('Post message: ' + i);
+                let m = 'Post message: ' + i;
+                console.log(m);
+                appendTextToResult(m);
                 worker.postMessage(result);
                 resolve(result);
             }, delay);
@@ -29,24 +41,39 @@ if (window.Worker) {
 	// worker 에서 요청 처리 후, 응답 처리 하는 함수
 	myWorker.onmessage = function ({data}) {
 		console.log(data);
+        appendTextToResult(data);
 	};
 
-	let promises = [];
-	const Delay1= 500;
-	const Delay2= 300;
+    delay1InputElement.onchange = function() {
+        testAsyncWorker(myWorker, delay1InputElement.value, delay2InputElement.value);
+    };
 
-	// 첫번째 비동기 묶음
-    promises = promises.concat(postMessagesAsync(myWorker, 1, 10, Delay1));
+    delay2InputElement.onchange = function() {
+        testAsyncWorker(myWorker, delay1InputElement.value, delay2InputElement.value);
+    };
 
-    // 두번째 비동기 묶음
-    promises = promises.concat(postMessagesAsync(myWorker, 20, 30, Delay2));
+    function testAsyncWorker(worker, delay1, delay2) {
+        if(delay1 > 0 && delay2 > 0) {
+            clearResult();
+            let promises = [];
 
-    // 비동기 요청 묶음
-    console.log("Start Promises request", promises);
-    Promise.all(promises).then((resArray) => {
-    	console.log("End Promises request", resArray);
-	});
+            // 첫번째 비동기 묶음
+            promises = promises.concat(postMessagesAsync(worker, 1, 10, delay1));
+
+            // 두번째 비동기 묶음
+            promises = promises.concat(postMessagesAsync(worker, 20, 30, delay2));
+
+            // 비동기 요청 묶음
+            console.log("Start Promises request", promises);
+            appendTextToResult("Start Promises request");
+            Promise.all(promises).then((resArray) => {
+                console.log("End Promises request", resArray);
+                appendTextToResult("End Promises request");
+            });
+        }
+    }
 
 } else {
- // TODO 화면에 worker 지원 안하는 브라우저 나타내기
+    // 화면에 worker 지원 안하는 브라우저 나타내기
+    result.textContent = 'This Browser don\'t support web worker';
 }
